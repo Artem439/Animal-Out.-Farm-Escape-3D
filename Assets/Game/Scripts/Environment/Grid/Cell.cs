@@ -6,6 +6,10 @@ namespace Game.Scripts.Environment.Grid
     public class Cell : MonoBehaviour
     {
         [SerializeField] private Renderer _renderer;
+        
+        private bool _isOccupied = false;
+        
+        public bool IsOccupied => _isOccupied;
 
         public void SetMaterial(Material material)
         {
@@ -16,6 +20,11 @@ namespace Game.Scripts.Environment.Grid
                 throw new NullReferenceException(nameof(material));
 
             _renderer.material = material;
+        }
+        
+        public void SetOccupied(bool occupied)
+        {
+            _isOccupied = occupied;
         }
     }
 }

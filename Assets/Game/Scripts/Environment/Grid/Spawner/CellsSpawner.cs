@@ -1,4 +1,5 @@
-﻿using Game.Scripts.Environment.Grid.Render;
+﻿using System;
+using Game.Scripts.Environment.Grid.Render;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid.Spawner
@@ -16,6 +17,8 @@ namespace Game.Scripts.Environment.Grid.Spawner
         private Cell[,] _cells;
 
         public Cell[,] Cells => _cells;
+        
+        public event Action OnSpawned;
 
         private void Awake()
         {
@@ -28,6 +31,7 @@ namespace Game.Scripts.Environment.Grid.Spawner
         private void Start()
         {
             Spawn();
+            OnSpawned?.Invoke();
         }
 
         private void Spawn()
