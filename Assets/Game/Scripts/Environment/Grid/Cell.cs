@@ -1,4 +1,5 @@
 using System;
+using Game.Scripts.Entities.Animals;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid
@@ -7,9 +8,20 @@ namespace Game.Scripts.Environment.Grid
     {
         [SerializeField] private Renderer _renderer;
         
-        private bool _isOccupied = false;
-        
-        public bool IsOccupied => _isOccupied;
+        public bool IsOccupied { get; private set; }
+        public Animal CurrentAnimal { get; private set; }
+
+        public void Occupy(Animal animal)
+        {
+            IsOccupied = true;
+            CurrentAnimal = animal;
+        }
+
+        public void Free()
+        {
+            IsOccupied = false;
+            CurrentAnimal = null;
+        }
 
         public void SetMaterial(Material material)
         {
@@ -20,11 +32,6 @@ namespace Game.Scripts.Environment.Grid
                 throw new NullReferenceException(nameof(material));
 
             _renderer.material = material;
-        }
-        
-        public void SetOccupied(bool occupied)
-        {
-            _isOccupied = occupied;
         }
     }
 }

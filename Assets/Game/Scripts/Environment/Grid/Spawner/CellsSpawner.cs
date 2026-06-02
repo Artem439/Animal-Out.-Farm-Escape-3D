@@ -13,12 +13,13 @@ namespace Game.Scripts.Environment.Grid.Spawner
         [SerializeField] private FieldCells _fieldCells;
         [SerializeField] private Transform _cellsParent;
         [SerializeField] private CellMaterialProvider _materialProvider;
-
-        private Cell[,] _cells;
-
-        public Cell[,] Cells => _cells;
         
         public event Action OnSpawned;
+        
+        public Cell[,] Cells => _cells;
+        public FieldCells FieldCells => _fieldCells;
+
+        private Cell[,] _cells;
 
         private void Awake()
         {
@@ -43,7 +44,6 @@ namespace Game.Scripts.Environment.Grid.Spawner
                 for (int column = 0; column < _fieldCells.Width; column++)
                 {
                     Cell cell = SpawnCell(startPosition, row, column);
-
                     _cells[row, column] = cell;
                 }
             }

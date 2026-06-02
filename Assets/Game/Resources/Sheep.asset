@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 186dfb06b5dd446182dbbb7d61634a92, type: 3}
   m_Name: Sheep
   m_EditorClassIdentifier: 
-  _name: 
-  _sizeX: 0
-  _sizeZ: 0
-  _animalPrefab: {fileID: 0}
+  _name: Sheep
+  _sizeX: 1
+  _sizeZ: 2
+  _baseRotation: {x: 90, y: 0, z: 0}
+  _animalPrefab: {fileID: 3363013408126871471, guid: 1300bacb99588444d8d2fcedf5d28ee6, type: 3}
