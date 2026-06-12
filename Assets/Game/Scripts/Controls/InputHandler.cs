@@ -9,14 +9,15 @@ namespace Game.Scripts.Controls
         [Inject] private AnimalDetector _animalDetector;
         [Inject] private InputReader _inputReader;
 
-        private void OnEnable()
+        private void Start()
         {
             _inputReader.LeftMouseButtonClicked += _animalDetector.Detect;
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
-            _inputReader.LeftMouseButtonClicked -= _animalDetector.Detect;
+            if (_inputReader != null)
+                _inputReader.LeftMouseButtonClicked -= _animalDetector.Detect;
         }
     }
 }

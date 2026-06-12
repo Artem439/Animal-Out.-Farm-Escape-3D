@@ -15,5 +15,5 @@ MonoBehaviour:
   _name: Sheep
   _sizeX: 1
   _sizeZ: 2
-  _baseRotation: {x: 90, y: 0, z: 0}
+  _baseRotation: {x: 0, y: 0, z: 0}
   _animalPrefab: {fileID: 3363013408126871471, guid: 1300bacb99588444d8d2fcedf5d28ee6, type: 3}

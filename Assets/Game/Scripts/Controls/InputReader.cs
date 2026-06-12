@@ -7,14 +7,12 @@ namespace Game.Scripts.Controls
     {
         private const KeyCode LeftMouseKey = KeyCode.Mouse0;
 
-        public event Action LeftMouseButtonClicked;
+        public event Action<Vector3> LeftMouseButtonClicked;
 
         private void Update()
         {
             if (Input.GetKeyDown(LeftMouseKey))
-            {
-                LeftMouseButtonClicked?.Invoke();
-            }
+                LeftMouseButtonClicked?.Invoke(Input.mousePosition);
         }
     }
 }

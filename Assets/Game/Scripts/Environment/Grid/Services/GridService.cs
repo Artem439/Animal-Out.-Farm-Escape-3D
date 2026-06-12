@@ -1,62 +1,36 @@
-﻿using Game.Scripts.Environment.Grid.Spawner;
+﻿using Game.Scripts.Environment.Grid.Configuration;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid.Services
 {
     public class GridService : MonoBehaviour
     {
-        private const float CellDetectionRadius = 0.5f;
-
-        [SerializeField] private CellsSpawner _cellsSpawner;
+        [SerializeField] private FieldLayout _fieldLayout;
 
         private Cell[,] _cells;
 
-        public float CellSize => _cellsSpawner.FieldCells.CellSize;
+        public float CellSize => _fieldLayout.CellSize;
 
-        private void Start()
+        public void BindCells(Cell[,] cells)
         {
-            _cells = _cellsSpawner.Cells;
-        }
-
-        public Cell GetCellAtPosition(Vector3 position)
-        {
-            for (int row = 0; row < _cells.GetLength(0); row++)
-                for (int col = 0; col < _cells.GetLength(1); col++)
-                    if (Vector3.Distance(_cells[row, col].transform.position, position) < CellDetectionRadius)
-                        return _cells[row, col];
-            
-            return null;
+            _cells = cells;
         }
 
         public Cell GetNeighborCell(Cell cell, Vector3 direction)
         {
-            for (int row = 0; row < _cells.GetLength(0); row++)
-            {
-                for (int col = 0; col < _cells.GetLength(1); col++)
-                {
-                    if (_cells[row, col] != cell)
-                    {
-                        continue;
-                    }
+            if (_cells == null)
+                return null;
 
-                    int newRow = row + Mathf.RoundToInt(-direction.z);
-                    int newCol = col + Mathf.RoundToInt(direction.x);
+            int newRow = cell.Row + Mathf.RoundToInt(-direction.z);
+            int newCol = cell.Column + Mathf.RoundToInt(direction.x);
 
-                    if (newRow < 0 || newRow >= _cells.GetLength(0))
-                    {
-                        return null;
-                    }
+            if (newRow < 0 || newRow >= _cells.GetLength(0))
+                return null;
 
-                    if (newCol < 0 || newCol >= _cells.GetLength(1))
-                    {
-                        return null;
-                    }
+            if (newCol < 0 || newCol >= _cells.GetLength(1))
+                return null;
 
-                    return _cells[newRow, newCol];
-                }
-            }
-
-            return null;
+            return _cells[newRow, newCol];
         }
     }
 }

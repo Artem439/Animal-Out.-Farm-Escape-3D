@@ -7,9 +7,9 @@ namespace Game.Scripts.Entities.Animals.Movement
     {
         [Inject] private Camera _camera;
 
-        public void Detect()
+        public void Detect(Vector3 mousePosition)
         {
-            Ray ray = _camera.ScreenPointToRay(Input.mousePosition);
+            Ray ray = _camera.ScreenPointToRay(mousePosition);
 
             if (Physics.Raycast(ray, out RaycastHit hit))
                 if (hit.collider.TryGetComponent(out Mover mover))
