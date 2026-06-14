@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Game.Scripts.Environment.Grid;
 using Game.Scripts.Environment.Grid.Spawner;
 using SplineMesh;
 using UnityEngine;
@@ -80,14 +81,25 @@ namespace Game.Scripts.Environment.Grid.Road
 
             WayPoint leftWP = wayPointsSpawner.Points[0, leftCol];
             WayPoint rightWP = wayPointsSpawner.Points[0, rightCol];
-            int leftRingIndex = ring.IndexOf(leftWP);
-            int rightRingIndex = ring.IndexOf(rightWP);
 
+            float houseHalfWidth = Mathf.Abs(rightWP.transform.position.x - leftWP.transform.position.x) * 0.5f;
+            float houseCenterX = exitPoint.position.x;
             float houseZ = exitPoint.position.z + settings.HouseSplineZOffset;
-            Vector3 leftHouse = new Vector3(leftWP.transform.position.x, roadY, houseZ);
-            Vector3 rightHouse = new Vector3(rightWP.transform.position.x, roadY, houseZ);
-            Vector3 leftEntry = ToRoadPosition(leftWP.transform.position, roadY);
-            Vector3 rightEntry = ToRoadPosition(rightWP.transform.position, roadY);
+            Vector3 leftHouse = new Vector3(houseCenterX - houseHalfWidth, roadY, houseZ);
+            Vector3 rightHouse = new Vector3(houseCenterX + houseHalfWidth, roadY, houseZ);
+
+            FindTopEntryWaypoints(wayPointsSpawner.Points, houseCenterX, out WayPoint leftEntryWP, out WayPoint rightEntryWP);
+            int rightRingIndex = ring.IndexOf(rightEntryWP);
+            int leftRingIndex = ring.IndexOf(leftEntryWP);
+
+            if (rightRingIndex < 0)
+                rightRingIndex = ring.IndexOf(rightWP);
+
+            if (leftRingIndex < 0)
+                leftRingIndex = ring.IndexOf(leftWP);
+
+            Vector3 leftEntry = ToRoadPosition(leftEntryWP.transform.position, roadY);
+            Vector3 rightEntry = ToRoadPosition(rightEntryWP.transform.position, roadY);
 
             List<Vector3> positions = new List<Vector3>
             {
@@ -104,6 +116,46 @@ namespace Game.Scripts.Environment.Grid.Road
             positions.Add(leftHouse);
 
             return positions;
+        }
+
+        private static void FindTopEntryWaypoints(
+            WayPoint[,] points,
+            float targetX,
+            out WayPoint leftEntry,
+            out WayPoint rightEntry)
+        {
+            int cols = points.GetLength(1);
+            int leftCol = 0;
+            int rightCol = cols - 1;
+
+            for (int col = 0; col < cols; col++)
+            {
+                WayPoint point = points[0, col];
+
+                if (point == null)
+                    continue;
+
+                if (point.transform.position.x <= targetX)
+                    leftCol = col;
+
+                if (point.transform.position.x >= targetX)
+                {
+                    rightCol = col;
+                    break;
+                }
+            }
+
+            leftEntry = points[0, leftCol];
+            rightEntry = points[0, rightCol];
+
+            if (leftEntry == null)
+                leftEntry = points[0, Mathf.Max(0, rightCol - 1)];
+
+            if (rightEntry == null)
+                rightEntry = points[0, Mathf.Min(cols - 1, leftCol + 1)];
+
+            if (leftEntry == rightEntry && leftCol > 0)
+                leftEntry = points[0, leftCol - 1];
         }
 
         private static void AddPerimeterArc(
