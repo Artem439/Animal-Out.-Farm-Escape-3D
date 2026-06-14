@@ -41,5 +41,11 @@ namespace Game.Scripts.Environment.Grid
 
             _renderer.material = material;
         }
+
+        public void SetVisualEnabled(bool enabled)
+        {
+            if (_renderer != null)
+                _renderer.enabled = enabled;
+        }
     }
 }

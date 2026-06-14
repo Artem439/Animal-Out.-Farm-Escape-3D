@@ -2,22 +2,31 @@ namespace Game.Scripts.Environment.Grid.Configuration
 {
     public enum FieldSize
     {
-        Small = 0,
-        Medium = 1,
-        Large = 2,
-        ExtraLarge = 3
+        Field8x8 = 0,
+        Field16x10 = 1,
+        Field20x14 = 2
     }
 
     public static class FieldSizeUtility
     {
-        public static int GetGridSize(FieldSize size)
+        public static int GetWidth(FieldSize size)
         {
             return size switch
             {
-                FieldSize.Small => 8,
-                FieldSize.Medium => 10,
-                FieldSize.Large => 14,
-                FieldSize.ExtraLarge => 16,
+                FieldSize.Field8x8 => 8,
+                FieldSize.Field16x10 => 16,
+                FieldSize.Field20x14 => 20,
+                _ => 8
+            };
+        }
+
+        public static int GetLength(FieldSize size)
+        {
+            return size switch
+            {
+                FieldSize.Field8x8 => 8,
+                FieldSize.Field16x10 => 10,
+                FieldSize.Field20x14 => 14,
                 _ => 8
             };
         }

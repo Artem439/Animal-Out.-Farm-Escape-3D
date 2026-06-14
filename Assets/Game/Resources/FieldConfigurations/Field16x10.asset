@@ -10,8 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c2f5a3b04d6e5f8091a2b3c4d5e6f7a8, type: 3}
-  m_Name: LargeField
+  m_Name: Field16x10
   m_EditorClassIdentifier: 
-  _size: 2
+  _size: 1
+  _fieldPrefab: {fileID: 720000001, guid: e1f2a3b4c5d6789012345678abcdef02, type: 3}
+  _roadPrefab: {fileID: 820000001, guid: c1d2e3f4a5b6789012345678abcdef02, type: 3}
+  _playingFieldPrefab: {fileID: 850000001, guid: b2c3d4e5f6789012345678abcdef12, type: 3}
+  _hideCellVisuals: 1
   _cellSize: 1
   _perimeterBorderOffset: 2

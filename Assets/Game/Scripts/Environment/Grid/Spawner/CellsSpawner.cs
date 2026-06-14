@@ -42,7 +42,11 @@ namespace Game.Scripts.Environment.Grid.Spawner
                 _cellsParent);
 
             cell.Initialize(row, column);
-            cell.SetMaterial(_materialProvider.GetMaterial(row, column));
+
+            if (_fieldLayout.Configuration != null && _fieldLayout.Configuration.HideCellVisuals)
+                cell.SetVisualEnabled(false);
+            else
+                cell.SetMaterial(_materialProvider.GetMaterial(row, column));
 
             return cell;
         }

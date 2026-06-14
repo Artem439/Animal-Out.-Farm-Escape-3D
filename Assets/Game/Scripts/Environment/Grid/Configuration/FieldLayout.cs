@@ -90,12 +90,12 @@ namespace Game.Scripts.Environment.Grid.Configuration
             return new Vector3(entryX, position.y, entryZ);
         }
 
-        public float GetPerimeterHalfWidth()
+        private float GetPerimeterHalfWidth()
         {
             return (Width + PerimeterBorderOffset - 1) * CellSize * 0.5f;
         }
 
-        public float GetPerimeterHalfLength()
+        private float GetPerimeterHalfLength()
         {
             return (Length + PerimeterBorderOffset - 1) * CellSize * 0.5f;
         }

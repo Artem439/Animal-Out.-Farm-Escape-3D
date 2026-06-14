@@ -29,43 +29,6 @@ namespace Game.Scripts.Environment.Grid.Road
             }
         }
 
-        public static Spline BuildSplineMesh(
-            Transform parent,
-            string objectName,
-            Material material,
-            float roadHalfWidth,
-            float roadThickness,
-            float sampleSpacing,
-            List<Vector3> pathPositions,
-            RoadPathSettings pathSettings)
-        {
-            GameObject splineObject = new GameObject(objectName);
-            splineObject.transform.SetParent(parent);
-
-            Spline spline = splineObject.AddComponent<Spline>();
-            spline.nodes.Clear();
-            spline.curves.Clear();
-
-            SplineExtrusion extrusion = splineObject.AddComponent<SplineExtrusion>();
-            extrusion.material = material;
-            extrusion.sampleSpacing = sampleSpacing;
-            extrusion.shapeVertices = CreateExtrusionProfile(roadHalfWidth, roadThickness);
-
-            AddSplineNodes(spline, pathPositions, pathSettings);
-            return spline;
-        }
-
-        private static List<ExtrusionSegment.Vertex> CreateExtrusionProfile(float roadHalfWidth, float roadThickness)
-        {
-            return new List<ExtrusionSegment.Vertex>
-            {
-                new ExtrusionSegment.Vertex(new Vector2(-roadHalfWidth, 0f), Vector2.up, 0f),
-                new ExtrusionSegment.Vertex(new Vector2(roadHalfWidth, 0f), Vector2.up, 0.33f),
-                new ExtrusionSegment.Vertex(new Vector2(roadHalfWidth, roadThickness), Vector2.up, 0.66f),
-                new ExtrusionSegment.Vertex(new Vector2(-roadHalfWidth, roadThickness), Vector2.up, 1f),
-            };
-        }
-
         private static List<Vector3> BuildRawPath(
             PerimeterWayPointsSpawner wayPointsSpawner,
             Transform exitPoint,

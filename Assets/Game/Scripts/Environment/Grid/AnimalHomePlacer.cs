@@ -8,21 +8,13 @@ namespace Game.Scripts.Environment.Grid
         [SerializeField] private FieldLayout _fieldLayout;
         [SerializeField] private float _xOffset;
         [SerializeField, Min(0f)] private float _zOffsetFromBorder = 1f;
-        [SerializeField] private float _yPosition = 0.5f;
+        [SerializeField] private float _yPosition = 0.1f;
 
         private void Awake()
         {
             Place();
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (_fieldLayout != null)
-                Place();
-        }
-#endif
-
+        
         private void Place()
         {
             if (_fieldLayout == null)
