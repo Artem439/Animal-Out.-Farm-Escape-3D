@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f5a3b04d6e5f8091a2b3c4d5e6f7a8, type: 3}
+  m_Name: Spr_Field_10x16
+  m_EditorClassIdentifier: 
+  _size: 1
+  _fieldPrefab: {fileID: 8249051149657369518, guid: 098262ac96ecef34a9de6eef941306c4, type: 3}
+  _roadPrefab: {fileID: 820000001, guid: c1d2e3f4a5b6789012345678abcdef02, type: 3}
+  _playingFieldPrefab: {fileID: 554752278956250679, guid: c8277ccd92aec6b489e8ac462e54aafe, type: 3}
+  _decorationsPrefab: {fileID: 8156334707537666206, guid: 137198f024829254087e8080dfe56cfe, type: 3}
+  _hideCellVisuals: 1
+  _spawnBorderOffset: 2
+  _cellSize: 1
+  _perimeterBorderOffset: 2
+  _perimeterPathInset: 0
+  _homeXOffset: -0.3
+  _homeZOffsetFromBorder: 7.5
+  _homeYOffset: 0.3
+  _homeScaleOffset: {x: 0, y: 0.5, z: 0}
+  _homeSprite: {fileID: 21300000, guid: dac48ffd7706f414aaafe3f930eb7e61, type: 3}

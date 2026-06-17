@@ -66,6 +66,8 @@ namespace Game.Scripts.Entities.Animals.Movement
 
             if (_gridMovement.ReachedEdge)
             {
+                _animal.transform.DOKill();
+
                 yield return _perimeterMovement.Move(
                     _animal,
                     _fieldLayout,

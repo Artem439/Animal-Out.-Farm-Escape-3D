@@ -45,7 +45,7 @@ namespace Game.Scripts.Environment.Grid.Spawner
 
             if (_fieldLayout.Configuration != null && _fieldLayout.Configuration.HideCellVisuals)
                 cell.SetVisualEnabled(false);
-            else
+            else if (_materialProvider != null)
                 cell.SetMaterial(_materialProvider.GetMaterial(row, column));
 
             return cell;

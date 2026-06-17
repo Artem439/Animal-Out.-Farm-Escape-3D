@@ -1,141 +1,224 @@
 using System.Collections.Generic;
-using Game.Scripts.Environment.Grid;
-using Game.Scripts.Environment.Grid.Spawner;
 using SplineMesh;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid.Road
 {
+    public sealed class RoadPaths
+    {
+        public List<Vector3> Perimeter { get; }
+        public IReadOnlyList<List<Vector3>> Branches { get; }
+        public List<Vector3> House { get; }
+        public Vector3 Junction { get; }
+
+        public bool UseBranches => Branches != null && Branches.Count > 0;
+
+        public RoadPaths(List<Vector3> perimeter, List<Vector3> house, Vector3 junction)
+            : this(perimeter, null, house, junction)
+        {
+        }
+
+        public RoadPaths(
+            List<Vector3> perimeter,
+            IReadOnlyList<List<Vector3>> branches,
+            List<Vector3> house,
+            Vector3 junction)
+        {
+            Perimeter = perimeter;
+            Branches = branches;
+            House = house;
+            Junction = junction;
+        }
+    }
+
     public static class RoadPathBuilder
     {
-        public static List<Vector3> Build(
-            PerimeterWayPointsSpawner wayPointsSpawner,
+        private const float MinPointDistance = 0.05f;
+
+        public static RoadPaths Build(
+            Transform roadRoot,
+            IReadOnlyList<Transform> waypoints,
             Transform exitPoint,
             float originY,
             RoadPathSettings settings)
         {
             float roadY = originY + settings.RoadOffsetY;
-            List<Vector3> rawPath = BuildRawPath(wayPointsSpawner, exitPoint, roadY, settings);
-            return RoundPathCorners(rawPath, settings);
+            RoadPathMerge merge = roadRoot != null ? roadRoot.GetComponent<RoadPathMerge>() : null;
+            List<Vector3> perimeter = BuildPerimeterPath(waypoints, roadY, merge);
+
+            if (merge != null && merge.MergeWaypoint != null)
+            {
+                Vector3 junction = ToRoadPosition(merge.MergeWaypoint.position, roadY);
+                List<List<Vector3>> branches = BuildBranchPaths(merge, exitPoint, roadY, junction);
+
+                if (branches.Count > 0)
+                {
+                    return new RoadPaths(
+                        perimeter,
+                        branches,
+                        BuildHousePath(exitPoint, roadY, junction),
+                        junction);
+                }
+            }
+
+            Transform junctionWaypoint = merge != null && merge.MergeWaypoint != null
+                ? merge.MergeWaypoint
+                : FindClosestWaypoint(waypoints, exitPoint.position);
+            Vector3 fallbackJunction = ToRoadPosition(junctionWaypoint.position, roadY);
+
+            return new RoadPaths(
+                perimeter,
+                BuildHousePath(exitPoint, roadY, fallbackJunction),
+                fallbackJunction);
         }
 
-        public static void AddSplineNodes(Spline spline, List<Vector3> positions, RoadPathSettings settings)
+        private static List<List<Vector3>> BuildBranchPaths(
+            RoadPathMerge merge,
+            Transform exitPoint,
+            float roadY,
+            Vector3 junction)
         {
+            List<List<Vector3>> branches = new List<List<Vector3>>(2);
+            Vector3 houseCenter = new Vector3(exitPoint.position.x, roadY, exitPoint.position.z);
+
+            if (merge.RightBranchWaypoint != null)
+            {
+                List<Vector3> rightBranch = BuildBranchPath(merge.RightBranchWaypoint, junction, houseCenter, roadY);
+
+                if (rightBranch.Count >= 2)
+                    branches.Add(rightBranch);
+            }
+
+            if (merge.LeftBranchWaypoint != null)
+            {
+                List<Vector3> leftBranch = BuildBranchPath(merge.LeftBranchWaypoint, junction, houseCenter, roadY);
+
+                if (leftBranch.Count >= 2)
+                    branches.Add(leftBranch);
+            }
+
+            return branches;
+        }
+
+        private static List<Vector3> BuildBranchPath(
+            Transform branchWaypoint,
+            Vector3 junction,
+            Vector3 houseCenter,
+            float roadY)
+        {
+            return SanitizePath(new List<Vector3>
+            {
+                ToRoadPosition(branchWaypoint.position, roadY),
+                junction,
+                houseCenter
+            });
+        }
+
+        public static void AddSplineNodes(
+            Spline spline,
+            Transform splineTransform,
+            List<Vector3> worldPositions,
+            RoadPathSettings settings)
+        {
+            List<Vector3> positions = SanitizePath(worldPositions);
+
+            if (positions.Count < 2)
+                return;
+
+            AddSplineNodes(positions, settings, (worldPosition, worldDirection) =>
+            {
+                Vector3 localPosition = splineTransform.InverseTransformPoint(worldPosition);
+                Vector3 localDirection = splineTransform.InverseTransformPoint(
+                    EnsureValidDirection(worldPosition, worldDirection, settings.MinNodeDirection));
+
+                spline.AddNode(new SplineNode(localPosition, localDirection));
+            });
+        }
+
+        public static void AddSplineNodes(List<Vector3> positions, RoadPathSettings settings, System.Action<Vector3, Vector3> addNode)
+        {
+            if (positions.Count == 2)
+            {
+                AddStraightSplineNodes(positions, settings, addNode);
+                return;
+            }
+
             for (int i = 0; i < positions.Count; i++)
             {
                 Vector3 position = positions[i];
                 Vector3 direction = ComputeNodeDirection(positions, i, settings);
-                spline.AddNode(new SplineNode(position, direction));
+                addNode(position, direction);
             }
         }
 
-        private static List<Vector3> BuildRawPath(
-            PerimeterWayPointsSpawner wayPointsSpawner,
-            Transform exitPoint,
+        private static List<Vector3> BuildPerimeterPath(
+            IReadOnlyList<Transform> waypoints,
             float roadY,
-            RoadPathSettings settings)
+            RoadPathMerge merge)
         {
-            List<WayPoint> ring = new List<WayPoint>();
-            wayPointsSpawner.TraversePerimeter(ring);
+            List<Vector3> positions = new List<Vector3>(waypoints.Count);
+            Vector3? mergePosition = merge != null && merge.MergeWaypoint != null
+                ? ToRoadPosition(merge.MergeWaypoint.position, roadY)
+                : null;
 
-            int cols = wayPointsSpawner.Points.GetLength(1);
-            int leftCol = cols / 2 - 1;
-            int rightCol = cols / 2;
-
-            WayPoint leftWP = wayPointsSpawner.Points[0, leftCol];
-            WayPoint rightWP = wayPointsSpawner.Points[0, rightCol];
-
-            float houseHalfWidth = Mathf.Abs(rightWP.transform.position.x - leftWP.transform.position.x) * 0.5f;
-            float houseCenterX = exitPoint.position.x;
-            float houseZ = exitPoint.position.z + settings.HouseSplineZOffset;
-            Vector3 leftHouse = new Vector3(houseCenterX - houseHalfWidth, roadY, houseZ);
-            Vector3 rightHouse = new Vector3(houseCenterX + houseHalfWidth, roadY, houseZ);
-
-            FindTopEntryWaypoints(wayPointsSpawner.Points, houseCenterX, out WayPoint leftEntryWP, out WayPoint rightEntryWP);
-            int rightRingIndex = ring.IndexOf(rightEntryWP);
-            int leftRingIndex = ring.IndexOf(leftEntryWP);
-
-            if (rightRingIndex < 0)
-                rightRingIndex = ring.IndexOf(rightWP);
-
-            if (leftRingIndex < 0)
-                leftRingIndex = ring.IndexOf(leftWP);
-
-            Vector3 leftEntry = ToRoadPosition(leftEntryWP.transform.position, roadY);
-            Vector3 rightEntry = ToRoadPosition(rightEntryWP.transform.position, roadY);
-
-            List<Vector3> positions = new List<Vector3>
+            for (int i = 0; i < waypoints.Count; i++)
             {
-                leftHouse,
-                rightHouse,
-                Vector3.Lerp(rightHouse, rightEntry, settings.HouseBranchBlend),
-                rightEntry
-            };
-
-            AddPerimeterArc(positions, ring, rightRingIndex, leftRingIndex, roadY);
-
-            positions.Add(leftEntry);
-            positions.Add(Vector3.Lerp(leftEntry, leftHouse, settings.HouseBranchBlend));
-            positions.Add(leftHouse);
-
-            return positions;
-        }
-
-        private static void FindTopEntryWaypoints(
-            WayPoint[,] points,
-            float targetX,
-            out WayPoint leftEntry,
-            out WayPoint rightEntry)
-        {
-            int cols = points.GetLength(1);
-            int leftCol = 0;
-            int rightCol = cols - 1;
-
-            for (int col = 0; col < cols; col++)
-            {
-                WayPoint point = points[0, col];
-
-                if (point == null)
+                if (waypoints[i] == null)
                     continue;
 
-                if (point.transform.position.x <= targetX)
-                    leftCol = col;
+                if (merge != null && merge.MergeWaypoint != null && waypoints[i] == merge.MergeWaypoint)
+                    continue;
 
-                if (point.transform.position.x >= targetX)
-                {
-                    rightCol = col;
-                    break;
-                }
+                Vector3 position = ToRoadPosition(waypoints[i].position, roadY);
+
+                if (mergePosition.HasValue && Distance(position, mergePosition.Value) < MinPointDistance)
+                    continue;
+
+                positions.Add(position);
             }
 
-            leftEntry = points[0, leftCol];
-            rightEntry = points[0, rightCol];
-
-            if (leftEntry == null)
-                leftEntry = points[0, Mathf.Max(0, rightCol - 1)];
-
-            if (rightEntry == null)
-                rightEntry = points[0, Mathf.Min(cols - 1, leftCol + 1)];
-
-            if (leftEntry == rightEntry && leftCol > 0)
-                leftEntry = points[0, leftCol - 1];
+            return SanitizePath(positions);
         }
 
-        private static void AddPerimeterArc(
-            List<Vector3> positions,
-            List<WayPoint> ring,
-            int startIndex,
-            int endIndex,
-            float roadY)
+        private static List<Vector3> BuildHousePath(Transform exitPoint, float roadY, Vector3 junction)
         {
-            int count = ring.Count;
-            int current = (startIndex + 1) % count;
+            Vector3 houseCenter = new Vector3(exitPoint.position.x, roadY, exitPoint.position.z);
 
-            while (current != endIndex)
+            return SanitizePath(new List<Vector3>
             {
-                positions.Add(ToRoadPosition(ring[current].transform.position, roadY));
-                current = (current + 1) % count;
+                junction,
+                houseCenter
+            });
+        }
+
+        private static List<Vector3> SanitizePath(List<Vector3> positions)
+        {
+            List<Vector3> sanitized = new List<Vector3>(positions.Count);
+
+            foreach (Vector3 position in positions)
+            {
+                if (IsFinite(position) == false)
+                    continue;
+
+                if (sanitized.Count > 0 && Distance(sanitized[^1], position) < MinPointDistance)
+                    continue;
+
+                sanitized.Add(position);
             }
+
+            return sanitized;
+        }
+
+        private static void AddStraightSplineNodes(List<Vector3> positions, RoadPathSettings settings, System.Action<Vector3, Vector3> addNode)
+        {
+            Vector3 start = positions[0];
+            Vector3 end = positions[1];
+            Vector3 delta = end - start;
+            float handle = Mathf.Max(delta.magnitude / 3f, settings.MinNodeDirection);
+            Vector3 forward = delta.sqrMagnitude > 0.0001f ? delta.normalized * handle : Vector3.forward * handle;
+
+            addNode(start, EnsureValidDirection(start, start + forward, settings.MinNodeDirection));
+            addNode(end, EnsureValidDirection(end, end + forward, settings.MinNodeDirection));
         }
 
         private static Vector3 ToRoadPosition(Vector3 source, float roadY)
@@ -143,136 +226,110 @@ namespace Game.Scripts.Environment.Grid.Road
             return new Vector3(source.x, roadY, source.z);
         }
 
-        private static List<Vector3> RoundPathCorners(List<Vector3> path, RoadPathSettings settings)
+        private static Transform FindClosestWaypoint(IReadOnlyList<Transform> waypoints, Vector3 targetPosition)
         {
-            if (path.Count < 3)
-                return path;
-
-            List<Vector3> rounded = new List<Vector3> { path[0] };
-
-            for (int i = 1; i < path.Count - 1; i++)
-            {
-                Vector3 previous = rounded[rounded.Count - 1];
-                AddCornerFillet(rounded, previous, path[i], path[i + 1], settings);
-            }
-
-            rounded.Add(path[path.Count - 1]);
-            return rounded;
-        }
-
-        private static void AddCornerFillet(
-            List<Vector3> result,
-            Vector3 previous,
-            Vector3 corner,
-            Vector3 next,
-            RoadPathSettings settings)
-        {
-            Vector3 incoming = corner - previous;
-            Vector3 outgoing = next - corner;
-            float incomingLength = incoming.magnitude;
-            float outgoingLength = outgoing.magnitude;
-
-            if (incomingLength < 0.001f || outgoingLength < 0.001f)
-            {
-                result.Add(corner);
-                return;
-            }
-
-            incoming /= incomingLength;
-            outgoing /= outgoingLength;
-
-            if (Vector3.Dot(incoming, outgoing) > 0.99f)
-            {
-                result.Add(corner);
-                return;
-            }
-
-            float angle = Vector3.Angle(-incoming, outgoing);
-
-            if (angle < settings.MinCornerAngle)
-            {
-                result.Add(corner);
-                return;
-            }
-
-            float maxFillet = Mathf.Min(
-                settings.CornerFilletRadius,
-                settings.RoadHalfWidth * 0.95f,
-                incomingLength * settings.CornerFilletMaxSegmentRatio,
-                outgoingLength * settings.CornerFilletMaxSegmentRatio);
-
-            if (maxFillet < 0.01f)
-            {
-                result.Add(corner);
-                return;
-            }
-
-            float halfAngleRad = angle * 0.5f * Mathf.Deg2Rad;
-            float sinHalf = Mathf.Sin(halfAngleRad);
-
-            if (sinHalf < 0.001f)
-            {
-                result.Add(corner);
-                return;
-            }
-
-            Vector3 bisector = (-incoming + outgoing).normalized;
-            Vector3 arcCenter = corner + bisector * (maxFillet / sinHalf);
-            Vector3 startArc = corner - incoming * maxFillet;
-            Vector3 endArc = corner + outgoing * maxFillet;
-
-            result.Add(startArc);
-
-            float startAngle = Mathf.Atan2(startArc.z - arcCenter.z, startArc.x - arcCenter.x);
-            float sweep = Mathf.DeltaAngle(
-                startAngle * Mathf.Rad2Deg,
-                Mathf.Atan2(endArc.z - arcCenter.z, endArc.x - arcCenter.x) * Mathf.Rad2Deg) * Mathf.Deg2Rad;
-
-            for (int segment = 1; segment < settings.CornerArcSegments; segment++)
-            {
-                float t = segment / (float)settings.CornerArcSegments;
-                float arcAngle = startAngle + sweep * t;
-
-                result.Add(new Vector3(
-                    arcCenter.x + Mathf.Cos(arcAngle) * maxFillet,
-                    Mathf.Lerp(startArc.y, endArc.y, t),
-                    arcCenter.z + Mathf.Sin(arcAngle) * maxFillet));
-            }
-
-            result.Add(endArc);
+            return RoadWayPointsCollector.FindClosestWaypoint(waypoints, targetPosition);
         }
 
         private static Vector3 ComputeNodeDirection(List<Vector3> positions, int index, RoadPathSettings settings)
         {
             Vector3 position = positions[index];
-            Vector3 tangent = Vector3.zero;
-            float averageDistance = 0f;
-            int neighborCount = 0;
+            Vector3 tangent;
+            float directionLength;
+            float smoothness = settings.SplineSmoothCurvature;
 
-            if (index > 0)
+            if (index == 0)
             {
-                Vector3 toPrevious = position - positions[index - 1];
-                averageDistance += toPrevious.magnitude;
-                tangent += toPrevious.normalized;
-                neighborCount++;
+                tangent = positions[1] - position;
+                directionLength = tangent.magnitude;
             }
-
-            if (index < positions.Count - 1)
+            else if (index == positions.Count - 1)
+            {
+                tangent = position - positions[index - 1];
+                directionLength = tangent.magnitude;
+            }
+            else
             {
                 Vector3 toNext = positions[index + 1] - position;
-                averageDistance += toNext.magnitude;
-                tangent += toNext.normalized;
-                neighborCount++;
+                Vector3 toPrev = position - positions[index - 1];
+                float minNeighbor = Mathf.Min(toNext.magnitude, toPrev.magnitude);
+                float straightness = toNext.sqrMagnitude < 0.0001f || toPrev.sqrMagnitude < 0.0001f
+                    ? 1f
+                    : Vector3.Dot(toNext.normalized, -toPrev.normalized);
+
+                if (toNext.sqrMagnitude < 0.0001f || toPrev.sqrMagnitude < 0.0001f)
+                {
+                    tangent = toNext.sqrMagnitude >= 0.0001f ? toNext : toPrev;
+                    directionLength = Mathf.Max(minNeighbor, settings.MinNodeDirection);
+                }
+                else if (straightness > 0.995f)
+                {
+                    tangent = toNext;
+                    directionLength = minNeighbor;
+                }
+                else if (straightness < 0.5f)
+                {
+                    tangent = toNext.normalized + toPrev.normalized;
+
+                    if (tangent.sqrMagnitude < 0.0001f)
+                        tangent = toNext;
+
+                    directionLength = minNeighbor * Mathf.Lerp(0.18f, 0.35f, smoothness);
+                }
+                else
+                {
+                    tangent = toNext.normalized + toPrev.normalized;
+
+                    if (tangent.sqrMagnitude < 0.0001f)
+                        tangent = toNext;
+
+                    directionLength = minNeighbor * Mathf.Lerp(0.3f, 0.55f, straightness * smoothness);
+                }
+
+                directionLength = Mathf.Min(directionLength, minNeighbor * Mathf.Lerp(0.35f, 0.5f, smoothness));
             }
+
+            if (tangent.sqrMagnitude < 0.0001f)
+                tangent = index < positions.Count - 1
+                    ? positions[index + 1] - position
+                    : position - positions[index - 1];
 
             if (tangent.sqrMagnitude < 0.0001f)
                 tangent = Vector3.forward;
 
-            float directionLength = neighborCount > 0
-                ? Mathf.Max(averageDistance / neighborCount * settings.SplineSmoothCurvature, settings.MinNodeDirection)
-                : settings.MinNodeDirection;
+            directionLength = Mathf.Clamp(
+                directionLength * Mathf.Lerp(0.85f, 1f, smoothness),
+                settings.MinNodeDirection * 0.25f,
+                settings.MinNodeDirection * 4f);
 
-            return position + tangent.normalized * directionLength;
+            return EnsureValidDirection(position, position + tangent.normalized * directionLength, settings.MinNodeDirection);
+        }
+
+        private static Vector3 EnsureValidDirection(Vector3 position, Vector3 direction, float minSeparation)
+        {
+            if (IsFinite(position) == false || IsFinite(direction) == false)
+                return position + Vector3.forward * minSeparation;
+
+            float minSqrDistance = minSeparation * minSeparation;
+
+            if ((direction - position).sqrMagnitude >= minSqrDistance)
+                return direction;
+
+            return position + Vector3.forward * minSeparation;
+        }
+
+        private static bool IsFinite(Vector3 vector)
+        {
+            return float.IsFinite(vector.x)
+                && float.IsFinite(vector.y)
+                && float.IsFinite(vector.z);
+        }
+
+        private static float Distance(Vector3 left, Vector3 right)
+        {
+            return Vector3.Distance(
+                new Vector3(left.x, 0f, left.z),
+                new Vector3(right.x, 0f, right.z));
         }
     }
 }

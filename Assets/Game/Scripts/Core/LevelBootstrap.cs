@@ -1,4 +1,5 @@
 using Game.Scripts.Entities.Animals.Spawn;
+using Game.Scripts.Environment.Grid;
 using Game.Scripts.Environment.Grid.Configuration;
 using Game.Scripts.Environment.Grid.Services;
 using Game.Scripts.Environment.Grid.Spawner;
@@ -13,7 +14,6 @@ namespace Game.Scripts.Core
         [SerializeField] private LevelConfiguration _level;
         [SerializeField] private FieldLayout _fieldLayout;
         [SerializeField] private CellsSpawner _cellsSpawner;
-        [SerializeField] private PerimeterWayPointsSpawner _wayPointsSpawner;
         [SerializeField] private PerimeterRoadBuilder _roadBuilder;
         [SerializeField] private GridService _gridService;
         [SerializeField] private Spawner _animalSpawner;
@@ -31,11 +31,19 @@ namespace Game.Scripts.Core
 
             _cellsSpawner.Build();
             _gridService.BindCells(_cellsSpawner.Cells);
-            _wayPointsSpawner.Build();
+            PlaceAnimalHomes();
             _roadBuilder.Build();
 
             if (_level != null)
                 _animalSpawner.Build(_level.AnimalSpawns);
+        }
+
+        private static void PlaceAnimalHomes()
+        {
+            AnimalHomePlacer[] placers = FindObjectsOfType<AnimalHomePlacer>();
+
+            foreach (AnimalHomePlacer placer in placers)
+                placer.Place();
         }
     }
 }

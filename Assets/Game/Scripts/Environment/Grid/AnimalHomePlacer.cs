@@ -1,30 +1,59 @@
 using Game.Scripts.Environment.Grid.Configuration;
+using Game.Scripts.Resources.Environment;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid
 {
     public class AnimalHomePlacer : MonoBehaviour
     {
+        private const int HomeSpriteSortingOrder = 50;
+
         [SerializeField] private FieldLayout _fieldLayout;
-        [SerializeField] private float _xOffset;
-        [SerializeField, Min(0f)] private float _zOffsetFromBorder = 1f;
-        [SerializeField] private float _yPosition = 0.1f;
+
+        private Vector3 _initialHomeVisualLocalScale;
 
         private void Awake()
         {
-            Place();
+            Transform homeVisual = GetHomeVisual();
+            if (homeVisual != null)
+                _initialHomeVisualLocalScale = homeVisual.localScale;
         }
-        
-        private void Place()
+
+        public void Place()
         {
-            if (_fieldLayout == null)
+            if (_fieldLayout == null || _fieldLayout.Configuration == null)
                 return;
 
+            FieldConfiguration configuration = _fieldLayout.Configuration;
+            Transform homeVisual = GetHomeVisual();
+            float visualForwardOffset = homeVisual != null ? homeVisual.localPosition.z : 0f;
+
             Vector3 position = transform.position;
-            position.x = _fieldLayout.transform.position.x + _xOffset;
-            position.y = _yPosition;
-            position.z = _fieldLayout.GetFrontBorderZ() + _zOffsetFromBorder;
+            position.x = _fieldLayout.transform.position.x + configuration.HomeXOffset;
+            position.y = configuration.HomeYOffset;
+            position.z = _fieldLayout.GetFrontBorderZ()
+                + configuration.HomeZOffsetFromBorder
+                - visualForwardOffset;
             transform.position = position;
+
+            if (homeVisual == null)
+                return;
+
+            homeVisual.localScale = _initialHomeVisualLocalScale + configuration.HomeScaleOffset;
+
+            SpriteRenderer homeSprite = homeVisual.GetComponent<SpriteRenderer>();
+            if (homeSprite == null)
+                return;
+
+            if (configuration.HomeSprite != null)
+                homeSprite.sprite = configuration.HomeSprite;
+
+            homeSprite.sortingOrder = HomeSpriteSortingOrder;
+        }
+
+        private Transform GetHomeVisual()
+        {
+            return transform.childCount > 0 ? transform.GetChild(0) : null;
         }
     }
 }

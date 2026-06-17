@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2f5a3b04d6e5f8091a2b3c4d5e6f7a8, type: 3}
+  m_Name: Base_Field_8x8
+  m_EditorClassIdentifier: 
+  _size: 0
+  _fieldPrefab: {fileID: 4598402210787765215, guid: f6cc24147826b0046afb961c97d83585, type: 3}
+  _roadPrefab: {fileID: 810000001, guid: c1d2e3f4a5b6789012345678abcdef01, type: 3}
+  _playingFieldPrefab: {fileID: 8601085444361172588, guid: 9cab553a6c949774db548b2d8317bdbc, type: 3}
+  _decorationsPrefab: {fileID: 1994095984075293422, guid: 60f94504d48a574439c4b5263d23b528, type: 3}
+  _hideCellVisuals: 1
+  _spawnBorderOffset: 1
+  _cellSize: 1
+  _perimeterBorderOffset: 2
+  _perimeterPathInset: 0
+  _homeXOffset: -0.3
+  _homeZOffsetFromBorder: 5.8
+  _homeYOffset: 0.1
+  _homeScaleOffset: {x: -0.2, y: -0.2, z: 0}
+  _homeSprite: {fileID: 21300000, guid: 6d11c8301fb77e54897f6748a456bc7a, type: 3}

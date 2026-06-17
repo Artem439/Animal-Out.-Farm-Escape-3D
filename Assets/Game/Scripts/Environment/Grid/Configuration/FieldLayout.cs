@@ -59,6 +59,16 @@ namespace Game.Scripts.Environment.Grid.Configuration
                 transform.position.z + lengthOffset);
         }
 
+        public Vector3 GetPerimeterWaypointPosition(int row, int col)
+        {
+            Vector3 startPosition = GetPerimeterStartPosition();
+
+            return new Vector3(
+                startPosition.x + col * CellSize,
+                startPosition.y,
+                startPosition.z - row * CellSize);
+        }
+
         public Vector3 GetPerimeterEntryPoint(Vector3 position, Vector3 direction)
         {
             direction = new Vector3(direction.x, 0f, direction.z).normalized;

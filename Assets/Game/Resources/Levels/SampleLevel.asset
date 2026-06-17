@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2b3c4d5e6f7586978a0b1c2d3e4f509, type: 3}
   m_Name: SampleLevel
   m_EditorClassIdentifier: 
-  _field: {fileID: 11400000, guid: 326b75b9b5ce72f4cbc365e06fc96269, type: 2}
+  _field: {fileID: 11400000, guid: a3021755ecdb2604a9a9f389b0922a53, type: 2}
   _animalSpawns:
   - _data: {fileID: 11400000, guid: 48e7286c2cf4b914da0fd4a3d54b0986, type: 2}
-    _count: 20
+    _count: 100

@@ -5,11 +5,12 @@ namespace Game.Scripts.Environment.Grid.Spawner
 {
     public class FieldEnvironmentSpawner : MonoBehaviour
     {
-        [SerializeField] private Transform _parent;
-
         private GameObject _fieldInstance;
         private GameObject _roadInstance;
         private GameObject _playingFieldInstance;
+        private GameObject _decorationsInstance;
+
+        public GameObject RoadInstance => _roadInstance;
 
         public void Spawn(FieldConfiguration configuration)
         {
@@ -18,7 +19,7 @@ namespace Game.Scripts.Environment.Grid.Spawner
             if (configuration == null)
                 return;
 
-            Transform parent = _parent != null ? _parent : transform;
+            Transform parent = transform;
 
             if (configuration.FieldPrefab != null)
             {
@@ -40,6 +41,13 @@ namespace Game.Scripts.Environment.Grid.Spawner
                 _playingFieldInstance.transform.localRotation = Quaternion.identity;
                 _playingFieldInstance.transform.localScale = Vector3.one;
             }
+
+            if (configuration.DecorationsPrefab != null)
+            {
+                _decorationsInstance = Instantiate(configuration.DecorationsPrefab, parent);
+                _decorationsInstance.transform.localRotation = Quaternion.identity;
+                _decorationsInstance.transform.localScale = Vector3.one;
+            }
         }
 
         public void Clear()
@@ -60,6 +68,12 @@ namespace Game.Scripts.Environment.Grid.Spawner
             {
                 Destroy(_playingFieldInstance);
                 _playingFieldInstance = null;
+            }
+
+            if (_decorationsInstance != null)
+            {
+                Destroy(_decorationsInstance);
+                _decorationsInstance = null;
             }
         }
     }

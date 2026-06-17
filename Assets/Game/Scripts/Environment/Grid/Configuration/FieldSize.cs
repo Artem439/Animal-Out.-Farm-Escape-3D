@@ -3,8 +3,8 @@ namespace Game.Scripts.Environment.Grid.Configuration
     public enum FieldSize
     {
         Field8x8 = 0,
-        Field16x10 = 1,
-        Field20x14 = 2
+        Field10x16 = 1,
+        Field14x20 = 2
     }
 
     public static class FieldSizeUtility
@@ -14,8 +14,8 @@ namespace Game.Scripts.Environment.Grid.Configuration
             return size switch
             {
                 FieldSize.Field8x8 => 8,
-                FieldSize.Field16x10 => 16,
-                FieldSize.Field20x14 => 20,
+                FieldSize.Field10x16 => 10,
+                FieldSize.Field14x20 => 14,
                 _ => 8
             };
         }
@@ -25,8 +25,8 @@ namespace Game.Scripts.Environment.Grid.Configuration
             return size switch
             {
                 FieldSize.Field8x8 => 8,
-                FieldSize.Field16x10 => 10,
-                FieldSize.Field20x14 => 14,
+                FieldSize.Field10x16 => 16,
+                FieldSize.Field14x20 => 20,
                 _ => 8
             };
         }
