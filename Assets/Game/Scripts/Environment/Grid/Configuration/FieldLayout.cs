@@ -27,7 +27,7 @@ namespace Game.Scripts.Environment.Grid.Configuration
             return transform.position.z + halfLength;
         }
 
-        public Vector3 GetCellsStartPosition()
+        private Vector3 GetCellsStartPosition()
         {
             float widthOffset = (Width - 1) * CellSize / HalfDivider;
             float lengthOffset = (Length - 1) * CellSize / HalfDivider;
@@ -44,27 +44,6 @@ namespace Game.Scripts.Environment.Grid.Configuration
 
             return new Vector3(
                 startPosition.x + column * CellSize,
-                startPosition.y,
-                startPosition.z - row * CellSize);
-        }
-
-        public Vector3 GetPerimeterStartPosition()
-        {
-            float widthOffset = (Width + PerimeterBorderOffset - 1) * CellSize / HalfDivider;
-            float lengthOffset = (Length + PerimeterBorderOffset - 1) * CellSize / HalfDivider;
-
-            return new Vector3(
-                transform.position.x - widthOffset,
-                transform.position.y + OffsetY,
-                transform.position.z + lengthOffset);
-        }
-
-        public Vector3 GetPerimeterWaypointPosition(int row, int col)
-        {
-            Vector3 startPosition = GetPerimeterStartPosition();
-
-            return new Vector3(
-                startPosition.x + col * CellSize,
                 startPosition.y,
                 startPosition.z - row * CellSize);
         }

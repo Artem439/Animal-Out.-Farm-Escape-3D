@@ -100,7 +100,7 @@ namespace Game.Scripts.Entities.Animals.Movement
 
             foreach (Cell cell in nextCells)
             {
-                cell.Occupy(animal);
+                cell.Occupy();
                 animal.OccupyCell(cell);
             }
         }

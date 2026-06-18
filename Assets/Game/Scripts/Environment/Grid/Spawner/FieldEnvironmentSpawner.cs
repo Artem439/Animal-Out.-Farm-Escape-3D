@@ -50,7 +50,7 @@ namespace Game.Scripts.Environment.Grid.Spawner
             }
         }
 
-        public void Clear()
+        private void Clear()
         {
             if (_fieldInstance != null)
             {

@@ -26,6 +26,7 @@ namespace Game.Scripts.Entities.Animals.Movement
         private readonly PerimeterMovement _perimeterMovement = new();
 
         [Inject]
+        
         private void Construct(GridService gridService, FieldLayout fieldLayout, PerimeterRoadBuilder roadBuilder)
         {
             _gridService = gridService;

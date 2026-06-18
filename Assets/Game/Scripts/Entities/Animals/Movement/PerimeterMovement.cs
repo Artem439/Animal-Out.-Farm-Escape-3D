@@ -13,6 +13,10 @@ namespace Game.Scripts.Entities.Animals.Movement
         private const float MinDistanceThreshold = 0.01f;
         private const float MinTangentMagnitude = 0.001f;
         private const float ForwardSearchStep = 0.25f;
+        private const float LookAheadProgressOffset = 0.04f;
+        private const float MinForwardAmount = 0.35f;
+        private const float MaxLateralDistance = 2.5f;
+        private const float LateralScorePenalty = 0.35f;
 
         private readonly struct RoutePlan
         {
@@ -122,7 +126,7 @@ namespace Game.Scripts.Entities.Animals.Movement
                 {
                     progress = value;
                     Vector3 position = GetPointOnPath(path, progress, out _);
-                    Vector3 lookAhead = GetPointOnPath(path, Mathf.Min(1f, progress + 0.04f), out _);
+                    Vector3 lookAhead = GetPointOnPath(path, Mathf.Min(1f, progress + LookAheadProgressOffset), out _);
                     animal.transform.position = position;
                     Vector3 forward = Flatten(lookAhead - position);
 
@@ -163,10 +167,10 @@ namespace Game.Scripts.Entities.Animals.Movement
                 float forwardAmount = Vector3.Dot(toSpline.normalized, forward);
                 float lateral = FlattenDistance(probe, splineWorld);
 
-                if (forwardAmount < 0.35f || lateral > 2.5f)
+                if (forwardAmount < MinForwardAmount || lateral > MaxLateralDistance)
                     continue;
 
-                float score = forwardAmount - lateral * 0.35f;
+                float score = forwardAmount - lateral * LateralScorePenalty;
 
                 if (score <= bestScore)
                     continue;
@@ -291,15 +295,22 @@ namespace Game.Scripts.Entities.Animals.Movement
                 && roadBuilder.RightBranchAnchorNodeIndex >= 0
                 && roadBuilder.LeftBranchAnchorNodeIndex >= 0)
             {
-                bool useRightBranch = worldPosition.x >= roadBuilder.Junction.x;
+                Vector3 rightAnchorPosition = ToWorld(
+                    perimeterSpline,
+                    perimeterSpline.nodes[roadBuilder.RightBranchAnchorNodeIndex].Position);
+                Vector3 leftAnchorPosition = ToWorld(
+                    perimeterSpline,
+                    perimeterSpline.nodes[roadBuilder.LeftBranchAnchorNodeIndex].Position);
+
+                bool useRightBranch = FlattenDistance(worldPosition, rightAnchorPosition)
+                    <= FlattenDistance(worldPosition, leftAnchorPosition);
                 int anchorNode = useRightBranch
                     ? roadBuilder.RightBranchAnchorNodeIndex
                     : roadBuilder.LeftBranchAnchorNodeIndex;
                 Spline branchSpline = useRightBranch
                     ? roadBuilder.RightBranchSpline
                     : roadBuilder.LeftBranchSpline;
-                bool goForward = CountNodeSteps(entryNode, anchorNode, true)
-                    <= CountNodeSteps(entryNode, anchorNode, false);
+                bool goForward = anchorNode >= entryNode;
 
                 return new RoutePlan(
                     perimeterSpline,
@@ -331,8 +342,7 @@ namespace Game.Scripts.Entities.Animals.Movement
             }
 
             int junctionNode = FindNearestNodeIndex(perimeterSpline, roadBuilder.Junction);
-            bool forwardToJunction = CountNodeSteps(entryNode, junctionNode, true)
-                <= CountNodeSteps(entryNode, junctionNode, false);
+            bool forwardToJunction = junctionNode >= entryNode;
 
             return new RoutePlan(
                 perimeterSpline,
@@ -363,17 +373,6 @@ namespace Game.Scripts.Entities.Animals.Movement
             }
 
             return bestIndex;
-        }
-
-        private static int CountNodeSteps(int from, int to, bool forward)
-        {
-            if (from == to)
-                return 0;
-
-            if (forward)
-                return to > from ? to - from : int.MaxValue / 4;
-
-            return to < from ? from - to : int.MaxValue / 4;
         }
 
         private static Vector3 GetPointOnPath(List<Vector3> path, float progress, out Vector3 forward)

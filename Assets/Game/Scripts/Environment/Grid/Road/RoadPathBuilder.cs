@@ -135,7 +135,7 @@ namespace Game.Scripts.Environment.Grid.Road
             });
         }
 
-        public static void AddSplineNodes(List<Vector3> positions, RoadPathSettings settings, System.Action<Vector3, Vector3> addNode)
+        private static void AddSplineNodes(List<Vector3> positions, RoadPathSettings settings, System.Action<Vector3, Vector3> addNode)
         {
             if (positions.Count == 2)
             {
@@ -161,15 +161,15 @@ namespace Game.Scripts.Environment.Grid.Road
                 ? ToRoadPosition(merge.MergeWaypoint.position, roadY)
                 : null;
 
-            for (int i = 0; i < waypoints.Count; i++)
+            foreach (var t in waypoints)
             {
-                if (waypoints[i] == null)
+                if (t == null)
                     continue;
 
-                if (merge != null && merge.MergeWaypoint != null && waypoints[i] == merge.MergeWaypoint)
+                if (merge != null && merge.MergeWaypoint != null && t == merge.MergeWaypoint)
                     continue;
 
-                Vector3 position = ToRoadPosition(waypoints[i].position, roadY);
+                Vector3 position = ToRoadPosition(t.position, roadY);
 
                 if (mergePosition.HasValue && Distance(position, mergePosition.Value) < MinPointDistance)
                     continue;

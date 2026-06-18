@@ -62,7 +62,6 @@ namespace Game.Scripts.Entities.Animals.Spawn
 
             if (_objectResolver == null)
             {
-                Debug.LogError("[AnimalSpawner] IObjectResolver is not injected. Register Spawner in GameLifetimeScope.");
                 _pool.Release(animal);
                 return;
             }
@@ -70,14 +69,14 @@ namespace Game.Scripts.Entities.Animals.Spawn
             _objectResolver.InjectGameObject(animal.gameObject);
             animal.Reset(center);
             animal.transform.rotation = targetRotation;
-            animal.Released += HandleReleased;
+            animal.Released += OnReleased;
 
             OccupyBlock(origin, currentSizeX, currentSizeZ, animal);
         }
 
-        private void HandleReleased(Animal animal)
+        private void OnReleased(Animal animal)
         {
-            animal.Released -= HandleReleased;
+            animal.Released -= OnReleased;
             _pool.Release(animal);
         }
 
@@ -160,7 +159,7 @@ namespace Game.Scripts.Entities.Animals.Spawn
             {
                 for (int col = origin.y; col < origin.y + sizeX; col++)
                 {
-                    _cells[row, col].Occupy(animal);
+                    _cells[row, col].Occupy();
                     animal.OccupyCell(_cells[row, col]);
                 }
             }

@@ -10,12 +10,13 @@ namespace Game.Scripts.Entities.Animals
     public class Animal : MonoBehaviour, ISpawnable<Animal>
     {
         [SerializeField] private AnimalData _data;
+        
+        private List<Cell> _occupiedCells;
+        
         public event Action<Animal> Released;
         
         public AnimalData Data => _data;
         public IReadOnlyList<Cell> OccupiedCells => _occupiedCells;
-
-        private List<Cell> _occupiedCells;
 
         private void Awake()
         {

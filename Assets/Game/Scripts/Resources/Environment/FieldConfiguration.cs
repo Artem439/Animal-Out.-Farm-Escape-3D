@@ -6,7 +6,7 @@ namespace Game.Scripts.Resources.Environment
     [CreateAssetMenu(fileName = "FieldConfiguration", menuName = "Gameplay/Field Configuration")]
     public class FieldConfiguration : ScriptableObject
     {
-        [SerializeField] private FieldSize _size = FieldSize.Field8x8;
+        [SerializeField] private FieldSize _size = FieldSize.Field8X8;
         [SerializeField] private GameObject _fieldPrefab;
         [SerializeField] private GameObject _roadPrefab;
         [SerializeField] private GameObject _playingFieldPrefab;
@@ -15,7 +15,6 @@ namespace Game.Scripts.Resources.Environment
         [SerializeField, Min(0)] private int _spawnBorderOffset = 1;
         [SerializeField, Min(0.01f)] private float _cellSize = 1f;
         [SerializeField, Min(0)] private int _perimeterBorderOffset = 2;
-        [SerializeField, Min(0f)] private float _perimeterPathInset = 0.6f;
         [SerializeField] private float _homeXOffset;
         [SerializeField, Min(0f)] private float _homeZOffsetFromBorder = 3.9f;
         [SerializeField, Min(0f)] private float _homeYOffset = 0.5f;
@@ -31,7 +30,6 @@ namespace Game.Scripts.Resources.Environment
         public int SpawnBorderOffset => _spawnBorderOffset;
         public float CellSize => _cellSize;
         public int PerimeterBorderOffset => _perimeterBorderOffset;
-        public float PerimeterPathInset => _perimeterPathInset;
         public float HomeXOffset => _homeXOffset;
         public float HomeZOffsetFromBorder => _homeZOffsetFromBorder;
         public float HomeYOffset => _homeYOffset;

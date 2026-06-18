@@ -40,7 +40,7 @@ namespace Game.Scripts.Core
 
         private static void PlaceAnimalHomes()
         {
-            AnimalHomePlacer[] placers = FindObjectsOfType<AnimalHomePlacer>();
+            AnimalHomePlacer[] placers = FindObjectsByType<AnimalHomePlacer>(FindObjectsSortMode.None);
 
             foreach (AnimalHomePlacer placer in placers)
                 placer.Place();

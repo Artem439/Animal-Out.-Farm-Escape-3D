@@ -8,21 +8,21 @@ namespace Game.Scripts.Core.Spawn
         [SerializeField] private T _entityPrefab;
         [SerializeField] private int _capacity;
         [SerializeField] private int _maxSize;
-        
+
         private ObjectPool<T> _pool;
-    
+
         private void Awake()
         {
             _pool = new ObjectPool<T>(
-                createFunc: () => CreateObject(),
-                actionOnGet: (obj) => OnGetObject(obj),
-                actionOnRelease: (obj) => OnReleaseObject(obj),
-                actionOnDestroy: (obj) => Destroy(obj.gameObject),
+                createFunc: CreateObject,
+                actionOnGet: OnGetObject,
+                actionOnRelease: OnReleaseObject,
+                actionOnDestroy: obj => Destroy(obj.gameObject),
                 collectionCheck: true,
                 defaultCapacity: _capacity,
                 maxSize: _maxSize);
         }
-    
+
         public T Get()
         {
             return _pool.Get();
@@ -42,7 +42,7 @@ namespace Game.Scripts.Core.Spawn
         {
             entity.gameObject.SetActive(true);
         }
-    
+
         private void OnReleaseObject(T entity)
         {
             entity.gameObject.SetActive(false);

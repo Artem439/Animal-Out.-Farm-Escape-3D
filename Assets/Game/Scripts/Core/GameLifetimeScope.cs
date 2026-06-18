@@ -48,10 +48,7 @@ namespace Game.Scripts.Core
         private static void RegisterComponent<T>(IContainerBuilder builder, T component) where T : Component
         {
             if (component == null)
-            {
-                Debug.LogError($"[GameLifetimeScope] Missing component: {typeof(T).Name}");
                 return;
-            }
 
             builder.RegisterComponent(component);
         }

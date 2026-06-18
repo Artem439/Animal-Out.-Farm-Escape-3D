@@ -16,7 +16,6 @@ namespace Game.Scripts.Environment.Grid.Spawner
         [SerializeField] private Transform _pointsParent;
         [SerializeField] private RoadPathSettings _pathSettings = new();
 
-        private readonly Dictionary<Spline, List<float>> _curveStartDistances = new();
         private readonly List<GameObject> _branchSplineObjects = new();
         private readonly List<Spline> _branchSplines = new();
 
@@ -65,7 +64,6 @@ namespace Game.Scripts.Environment.Grid.Spawner
             }
 
             _branchSplineObjects.Clear();
-            _curveStartDistances.Clear();
 
             if (_fieldEnvironmentSpawner == null || _fieldEnvironmentSpawner.RoadInstance == null)
                 return;
@@ -121,13 +119,12 @@ namespace Game.Scripts.Environment.Grid.Spawner
             if (PerimeterSpline == null || HouseSpline == null)
             {
                 Junction = Vector3.zero;
-                return;
             }
         }
 
-        private Spline CreateSpline(string name, List<Vector3> positions, bool isPerimeterSpline)
+        private Spline CreateSpline(string objectName, List<Vector3> positions, bool isPerimeterSpline)
         {
-            GameObject splineObject = new GameObject(name);
+            GameObject splineObject = new GameObject(objectName);
             splineObject.transform.SetParent(_pointsParent, false);
             splineObject.transform.localPosition = Vector3.zero;
             splineObject.transform.localRotation = Quaternion.identity;
@@ -145,60 +142,14 @@ namespace Game.Scripts.Environment.Grid.Spawner
                 return null;
             }
 
-            CacheCurveDistances(spline);
-
             if (isPerimeterSpline)
                 _perimeterSplineObject = splineObject;
-            else if (name == HouseSplineName)
+            else if (objectName == HouseSplineName)
                 _houseSplineObject = splineObject;
             else
                 _branchSplineObjects.Add(splineObject);
 
             return spline;
-        }
-
-        private void CacheCurveDistances(Spline spline)
-        {
-            List<float> distances = new List<float>(spline.curves.Count);
-            float distance = 0f;
-
-            foreach (CubicBezierCurve curve in spline.curves)
-            {
-                distances.Add(distance);
-                distance += curve.Length;
-            }
-
-            _curveStartDistances[spline] = distances;
-        }
-
-        public float GetTotalDistance(Spline spline, CurveSample sample)
-        {
-            if (_curveStartDistances.TryGetValue(spline, out List<float> curveStartDistances) == false)
-                return 0f;
-
-            for (int i = 0; i < spline.curves.Count; i++)
-            {
-                if (spline.curves[i] == sample.curve)
-                    return curveStartDistances[i] + sample.distanceInCurve;
-            }
-
-            for (int i = 0; i < spline.curves.Count; i++)
-            {
-                if (Mathf.Abs(spline.curves[i].Length - sample.distanceInCurve) > 0.25f
-                    && sample.distanceInCurve > spline.curves[i].Length)
-                {
-                    continue;
-                }
-
-                return curveStartDistances[i] + Mathf.Clamp(sample.distanceInCurve, 0f, spline.curves[i].Length);
-            }
-
-            return 0f;
-        }
-
-        public float GetTotalDistance(CurveSample sample)
-        {
-            return GetTotalDistance(PerimeterSpline, sample);
         }
 
         private static int FindNearestNodeIndex(Spline spline, Vector3 worldPosition)
