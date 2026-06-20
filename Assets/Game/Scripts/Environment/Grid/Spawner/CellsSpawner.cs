@@ -1,5 +1,4 @@
-﻿using Game.Scripts.Environment.Grid.Configuration;
-using Game.Scripts.Environment.Grid.Render;
+using Game.Scripts.Environment.Grid.Configuration;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid.Spawner
@@ -9,7 +8,6 @@ namespace Game.Scripts.Environment.Grid.Spawner
         [SerializeField] private Cell _cellPrefab;
         [SerializeField] private FieldLayout _fieldLayout;
         [SerializeField] private Transform _cellsParent;
-        [SerializeField] private CellMaterialProvider _materialProvider;
 
         public Cell[,] Cells { get; private set; }
         public FieldLayout FieldLayout => _fieldLayout;
@@ -45,8 +43,6 @@ namespace Game.Scripts.Environment.Grid.Spawner
 
             if (_fieldLayout.Configuration != null && _fieldLayout.Configuration.HideCellVisuals)
                 cell.SetVisualEnabled(false);
-            else if (_materialProvider != null)
-                cell.SetMaterial(_materialProvider.GetMaterial(row, column));
 
             return cell;
         }

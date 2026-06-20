@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Game.Scripts.Environment.Grid;
 using Game.Scripts.Environment.Grid.Spawner;
 using Game.Scripts.Resources.Entities;
@@ -39,6 +39,9 @@ namespace Game.Scripts.Entities.Animals.Spawn
 
         private void TrySpawnAnimal(AnimalData data)
         {
+            if (data.AnimalPrefab == null)
+                return;
+
             int rotationStep = Random.Range(0, RotationStepCount);
             int currentSizeX = data.SizeX;
             int currentSizeZ = data.SizeZ;
@@ -58,7 +61,7 @@ namespace Game.Scripts.Entities.Animals.Spawn
             Vector3 center = GetBlockCenter(origin, currentSizeX, currentSizeZ);
             center.y += SpawnOffsetY;
 
-            Animal animal = _pool.Get();
+            Animal animal = _pool.Get(data.AnimalPrefab);
 
             if (_objectResolver == null)
             {
@@ -159,7 +162,7 @@ namespace Game.Scripts.Entities.Animals.Spawn
             {
                 for (int col = origin.y; col < origin.y + sizeX; col++)
                 {
-                    _cells[row, col].Occupy();
+                    _cells[row, col].Occupy(animal);
                     animal.OccupyCell(_cells[row, col]);
                 }
             }

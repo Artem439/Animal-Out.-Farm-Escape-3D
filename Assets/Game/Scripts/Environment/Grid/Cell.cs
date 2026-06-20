@@ -1,4 +1,4 @@
-using System;
+using Game.Scripts.Entities.Animals;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid
@@ -10,6 +10,7 @@ namespace Game.Scripts.Environment.Grid
         public int Row { get; private set; }
         public int Column { get; private set; }
         public bool IsOccupied { get; private set; }
+        public Animal Occupant { get; private set; }
 
         public void Initialize(int row, int column)
         {
@@ -17,25 +18,16 @@ namespace Game.Scripts.Environment.Grid
             Column = column;
         }
 
-        public void Occupy()
+        public void Occupy(Animal animal)
         {
             IsOccupied = true;
+            Occupant = animal;
         }
 
         public void Free()
         {
             IsOccupied = false;
-        }
-
-        public void SetMaterial(Material material)
-        {
-            if (_renderer == null)
-                throw new NullReferenceException(nameof(_renderer));
-
-            if (material == null)
-                throw new NullReferenceException(nameof(material));
-
-            _renderer.material = material;
+            Occupant = null;
         }
 
         public void SetVisualEnabled(bool enabled)

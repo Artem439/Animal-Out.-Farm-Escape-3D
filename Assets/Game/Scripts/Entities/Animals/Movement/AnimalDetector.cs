@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 using VContainer;
 
 namespace Game.Scripts.Entities.Animals.Movement
@@ -11,9 +11,13 @@ namespace Game.Scripts.Entities.Animals.Movement
         {
             Ray ray = _camera.ScreenPointToRay(mousePosition);
 
-            if (Physics.Raycast(ray, out RaycastHit hit))
-                if (hit.collider.TryGetComponent(out Mover mover))
-                    mover.StartMoving();
+            if (Physics.Raycast(ray, out RaycastHit hit) == false)
+                return;
+
+            Mover mover = hit.collider.GetComponentInParent<Mover>();
+
+            if (mover != null)
+                mover.StartMoving();
         }
     }
 }

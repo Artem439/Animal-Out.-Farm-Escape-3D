@@ -1,4 +1,5 @@
-﻿using System.Collections;
+using System;
+using System.Collections;
 using DG.Tweening;
 using Game.Scripts.Environment.Grid.Configuration;
 using Game.Scripts.Environment.Grid.Services;
@@ -10,8 +11,8 @@ namespace Game.Scripts.Entities.Animals.Movement
 {
     public class Mover : MonoBehaviour
     {
-        [SerializeField] private float _moveSpeed = 0.3f;
-        [SerializeField] private float _perimeterMoveSpeed = 0.5f;
+        [SerializeField] private float _moveSpeed = 4f;
+        [SerializeField] private float _perimeterMoveSpeed = 4f;
         [SerializeField] private float _rotationSpeed = 180f;
 
         private Animal _animal;
@@ -25,8 +26,12 @@ namespace Game.Scripts.Entities.Animals.Movement
         private readonly GridMovement _gridMovement = new();
         private readonly PerimeterMovement _perimeterMovement = new();
 
+        public event Action Moving;
+        public event Action Stopped;
+        public event Action Stunned;
+        public event Action Hit;
+
         [Inject]
-        
         private void Construct(GridService gridService, FieldLayout fieldLayout, PerimeterRoadBuilder roadBuilder)
         {
             _gridService = gridService;
@@ -56,7 +61,13 @@ namespace Game.Scripts.Entities.Animals.Movement
             if (_isMoving)
                 return;
 
+            Moving?.Invoke();
             _moveRoutine = StartCoroutine(MoveRoutine());
+        }
+
+        public void PlayHitReaction()
+        {
+            Hit?.Invoke();
         }
 
         private IEnumerator MoveRoutine()
@@ -76,9 +87,24 @@ namespace Game.Scripts.Entities.Animals.Movement
                     _perimeterMoveSpeed,
                     _rotationSpeed);
             }
+            else if (_animal.isActiveAndEnabled)
+            {
+                Stunned?.Invoke();
+                ApplyHitToBlockingAnimals();
+            }
 
             _isMoving = false;
             _moveRoutine = null;
+            Stopped?.Invoke();
+        }
+
+        private void ApplyHitToBlockingAnimals()
+        {
+            foreach (Animal blockingAnimal in _gridMovement.BlockingAnimals)
+            {
+                if (blockingAnimal != null && blockingAnimal.TryGetComponent(out Mover blockingMover))
+                    blockingMover.PlayHitReaction();
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using Game.Scripts.Entities.Animals.Movement;
+using Game.Scripts.Entities.Animals.Movement;
 using UnityEngine;
 using VContainer;
 
@@ -9,15 +9,14 @@ namespace Game.Scripts.Controls
         [Inject] private AnimalDetector _animalDetector;
         [Inject] private InputReader _inputReader;
 
-        private void OnEnable()
+        private void Start()
         {
-            if (_inputReader != null && _animalDetector != null)
-                _inputReader.LeftMouseButtonClicked += _animalDetector.Detect;
+            _inputReader.LeftMouseButtonClicked += _animalDetector.Detect;
         }
 
-        private void OnDisable()
+        private void OnDestroy()
         {
-            if (_inputReader != null && _animalDetector != null)
+            if (_inputReader != null)
                 _inputReader.LeftMouseButtonClicked -= _animalDetector.Detect;
         }
     }

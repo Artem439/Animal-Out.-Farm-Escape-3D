@@ -10,11 +10,15 @@ namespace Game.Scripts.Entities.Animals.Movement
 {
     public class GridMovement
     {
+        private readonly List<Animal> _blockingAnimals = new();
+
         public bool ReachedEdge { get; private set; }
+        public IReadOnlyList<Animal> BlockingAnimals => _blockingAnimals;
 
         public IEnumerator Move(Animal animal, GridService gridService, float moveSpeed)
         {
             ReachedEdge = false;
+            _blockingAnimals.Clear();
 
             while (animal.isActiveAndEnabled)
             {
@@ -27,16 +31,19 @@ namespace Game.Scripts.Entities.Animals.Movement
                     yield break;
                 }
 
-                if (AreCellsFree(nextCells) == false)
+                CollectBlockingAnimals(nextCells, _blockingAnimals);
+
+                if (_blockingAnimals.Count > 0)
                     yield break;
 
                 List<Cell> finalCells = GetFinalCells(animal, gridService, nextCells, direction);
                 UpdateCells(animal, nextCells, finalCells);
 
                 Vector3 targetPosition = GetTargetPosition(animal, gridService, direction);
+                float stepDuration = moveSpeed > 0f ? 1f / moveSpeed : 0f;
 
                 yield return animal.transform
-                    .DOMove(targetPosition, moveSpeed)
+                    .DOMove(targetPosition, stepDuration)
                     .SetEase(Ease.Linear)
                     .WaitForCompletion();
             }
@@ -65,13 +72,18 @@ namespace Game.Scripts.Entities.Animals.Movement
             return nextCells;
         }
 
-        private static bool AreCellsFree(List<Cell> cells)
+        private static void CollectBlockingAnimals(List<Cell> nextCells, List<Animal> blockingAnimals)
         {
-            foreach (Cell cell in cells)
-                if (cell.IsOccupied)
-                    return false;
+            foreach (Cell cell in nextCells)
+            {
+                if (cell.IsOccupied == false)
+                    continue;
 
-            return true;
+                Animal occupant = cell.Occupant;
+
+                if (occupant != null && blockingAnimals.Contains(occupant) == false)
+                    blockingAnimals.Add(occupant);
+            }
         }
 
         private static Vector3 GetTargetPosition(Animal animal, GridService gridService, Vector3 direction)
@@ -100,7 +112,7 @@ namespace Game.Scripts.Entities.Animals.Movement
 
             foreach (Cell cell in nextCells)
             {
-                cell.Occupy();
+                cell.Occupy(animal);
                 animal.OccupyCell(cell);
             }
         }

@@ -12,7 +12,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a2b3c4d5e6f7586978a0b1c2d3e4f509, type: 3}
   m_Name: SampleLevel
   m_EditorClassIdentifier: 
-  _field: {fileID: 11400000, guid: a3021755ecdb2604a9a9f389b0922a53, type: 2}
+  _field: {fileID: 11400000, guid: c470a62af08b44c49bc1932ebccd0050, type: 2}
   _animalSpawns:
   - _data: {fileID: 11400000, guid: 48e7286c2cf4b914da0fd4a3d54b0986, type: 2}
-    _count: 100
+    _count: 1
+  - _data: {fileID: 11400000, guid: 51eb8f1a3ea170444913948b89a68f37, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: e8327b292d641374bb36760f13ff61a7, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 13724c0170fddea4690df282b6119dbd, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 3002629fae8f79a47b2aff7da48815ed, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 4920ddc3d18ddba4cacdf99a227c797b, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 269caa6be2a644d4bb9f791447bc4c04, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: e2cbdb95339ed3e409a61fa3d3345e4c, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 9ef00bfabca89f444bedba25075aebb0, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 018b05e0adac18a4ebcc748fbeb34b87, type: 2}
+    _count: 1
+  - _data: {fileID: 11400000, guid: 4ed4023d352c9524f9136293ff5d8f46, type: 2}
+    _count: 1

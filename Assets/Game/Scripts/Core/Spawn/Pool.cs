@@ -1,41 +1,62 @@
-﻿using UnityEngine;
+﻿using System.Collections.Generic;
+using UnityEngine;
 using UnityEngine.Pool;
 
 namespace Game.Scripts.Core.Spawn
 {
     public abstract class Pool<T> : MonoBehaviour where T : Component
     {
-        [SerializeField] private T _entityPrefab;
         [SerializeField] private int _capacity;
         [SerializeField] private int _maxSize;
 
-        private ObjectPool<T> _pool;
+        private readonly Dictionary<T, ObjectPool<T>> _pools = new();
+        private readonly Dictionary<T, T> _prefabByInstance = new();
 
-        private void Awake()
+        public T Get(T prefab)
         {
-            _pool = new ObjectPool<T>(
-                createFunc: CreateObject,
-                actionOnGet: OnGetObject,
-                actionOnRelease: OnReleaseObject,
-                actionOnDestroy: obj => Destroy(obj.gameObject),
-                collectionCheck: true,
-                defaultCapacity: _capacity,
-                maxSize: _maxSize);
-        }
-
-        public T Get()
-        {
-            return _pool.Get();
+            return GetPool(prefab).Get();
         }
 
         public void Release(T entity)
         {
-            _pool.Release(entity);
+            if (_prefabByInstance.TryGetValue(entity, out T prefab) == false)
+                return;
+
+            if (_pools.TryGetValue(prefab, out ObjectPool<T> pool))
+                pool.Release(entity);
         }
 
-        private T CreateObject()
+        private ObjectPool<T> GetPool(T prefab)
         {
-            return Instantiate(_entityPrefab);
+            if (_pools.TryGetValue(prefab, out ObjectPool<T> pool))
+                return pool;
+
+            pool = new ObjectPool<T>(
+                createFunc: () => CreateObject(prefab),
+                actionOnGet: OnGetObject,
+                actionOnRelease: OnReleaseObject,
+                actionOnDestroy: DestroyObject,
+                collectionCheck: true,
+                defaultCapacity: _capacity,
+                maxSize: _maxSize);
+
+            _pools.Add(prefab, pool);
+
+            return pool;
+        }
+
+        private T CreateObject(T prefab)
+        {
+            T instance = Instantiate(prefab);
+            _prefabByInstance.Add(instance, prefab);
+
+            return instance;
+        }
+
+        private void DestroyObject(T entity)
+        {
+            _prefabByInstance.Remove(entity);
+            Destroy(entity.gameObject);
         }
 
         private void OnGetObject(T entity)

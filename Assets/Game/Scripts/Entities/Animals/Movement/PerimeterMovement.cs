@@ -420,12 +420,14 @@ namespace Game.Scripts.Entities.Animals.Movement
             return length;
         }
 
-        private static float GetDuration(float distance, float cellSize, float moveSpeedPerCell)
+        private static float GetDuration(float distance, float cellSize, float moveSpeed)
         {
-            if (distance <= MinDistanceThreshold)
+            if (distance <= MinDistanceThreshold || moveSpeed <= 0f)
                 return 0f;
 
-            return distance / Mathf.Max(cellSize, MinDistanceThreshold) * moveSpeedPerCell;
+            float cells = distance / Mathf.Max(cellSize, MinDistanceThreshold);
+
+            return cells / moveSpeed;
         }
 
         private static IEnumerator TweenTo(

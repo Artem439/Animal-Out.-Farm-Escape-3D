@@ -1,4 +1,4 @@
-﻿using Game.Scripts.Entities.Animals;
+using Game.Scripts.Entities.Animals;
 using UnityEngine;
 
 namespace Game.Scripts.Environment.Grid
@@ -7,7 +7,9 @@ namespace Game.Scripts.Environment.Grid
     {
         private void OnTriggerEnter(Collider other)
         {
-            if (other.TryGetComponent(out Animal animal))
+            Animal animal = other.GetComponentInParent<Animal>();
+
+            if (animal != null)
                 animal.Release();
         }
     }
