@@ -617,6 +617,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _pool: {fileID: 712846512}
   _cellsSpawner: {fileID: 964948390}
+  _centerBiasStrength: 12
 --- !u!4 &712846514
 Transform:
   m_ObjectHideFlags: 0

@@ -18,10 +18,13 @@ namespace Game.Scripts.Entities.Animals.Spawn
 
         [SerializeField] private Pool _pool;
         [SerializeField] private CellsSpawner _cellsSpawner;
+        [SerializeField, Min(0f)] private float _centerBiasStrength = 4f;
 
         [Inject] private IObjectResolver _objectResolver;
 
         private Cell[,] _cells;
+
+        private readonly List<PlacementCandidate> _candidates = new();
 
         public void Build(IReadOnlyList<AnimalSpawnEntry> spawnEntries)
         {
@@ -42,23 +45,10 @@ namespace Game.Scripts.Entities.Animals.Spawn
             if (data.AnimalPrefab == null)
                 return;
 
-            int rotationStep = Random.Range(0, RotationStepCount);
-            int currentSizeX = data.SizeX;
-            int currentSizeZ = data.SizeZ;
-
-            if (rotationStep % RotationStepDivisor != 0)
-            {
-                int temp = currentSizeX;
-                currentSizeX = currentSizeZ;
-                currentSizeZ = temp;
-            }
-
-            Quaternion targetRotation = Quaternion.Euler(0, rotationStep * RotationAnglePerStep, 0);
-
-            if (TryFindFreeBlock(currentSizeX, currentSizeZ, out Vector2Int origin) == false)
+            if (TryFindWinnablePlacement(data, out PlacementCandidate placement) == false)
                 return;
 
-            Vector3 center = GetBlockCenter(origin, currentSizeX, currentSizeZ);
+            Vector3 center = GetBlockCenter(placement.Origin, placement.SizeX, placement.SizeZ);
             center.y += SpawnOffsetY;
 
             Animal animal = _pool.Get(data.AnimalPrefab);
@@ -71,10 +61,10 @@ namespace Game.Scripts.Entities.Animals.Spawn
 
             _objectResolver.InjectGameObject(animal.gameObject);
             animal.Reset(center);
-            animal.transform.rotation = targetRotation;
+            animal.transform.rotation = Quaternion.Euler(0, placement.RotationStep * RotationAnglePerStep, 0);
             animal.Released += OnReleased;
 
-            OccupyBlock(origin, currentSizeX, currentSizeZ, animal);
+            OccupyBlock(placement.Origin, placement.SizeX, placement.SizeZ, animal);
         }
 
         private void OnReleased(Animal animal)
@@ -83,30 +73,53 @@ namespace Game.Scripts.Entities.Animals.Spawn
             _pool.Release(animal);
         }
 
-        private bool TryFindFreeBlock(int sizeX, int sizeZ, out Vector2Int origin)
+        private bool TryFindWinnablePlacement(AnimalData data, out PlacementCandidate placement)
         {
             int rows = _cells.GetLength(0);
             int cols = _cells.GetLength(1);
             int margin = GetSpawnBorderOffset();
 
-            List<Vector2Int> candidates = new List<Vector2Int>();
+            _candidates.Clear();
 
-            for (int row = margin; row <= rows - sizeZ - margin; row++)
+            for (int rotationStep = 0; rotationStep < RotationStepCount; rotationStep++)
             {
-                for (int col = margin; col <= cols - sizeX - margin; col++)
+                int sizeX = data.SizeX;
+                int sizeZ = data.SizeZ;
+
+                if (rotationStep % RotationStepDivisor != 0)
                 {
-                    if (IsBlockFree(row, col, sizeX, sizeZ))
-                        candidates.Add(new Vector2Int(row, col));
+                    int temp = sizeX;
+                    sizeX = sizeZ;
+                    sizeZ = temp;
+                }
+
+                if (sizeX <= 0 || sizeZ <= 0)
+                    continue;
+
+                for (int row = margin; row <= rows - sizeZ - margin; row++)
+                {
+                    for (int col = margin; col <= cols - sizeX - margin; col++)
+                    {
+                        Vector2Int origin = new Vector2Int(row, col);
+
+                        if (IsBlockFree(origin, sizeX, sizeZ) == false)
+                            continue;
+
+                        if (IsForwardLaneClear(origin, sizeX, sizeZ, rotationStep) == false)
+                            continue;
+
+                        _candidates.Add(new PlacementCandidate(origin, rotationStep, sizeX, sizeZ));
+                    }
                 }
             }
 
-            if (candidates.Count == 0)
+            if (_candidates.Count == 0)
             {
-                origin = default;
+                placement = default;
                 return false;
             }
 
-            origin = PickCenterBiasedOrigin(candidates, rows, cols);
+            placement = PickCenterBiased(_candidates, rows, cols, _centerBiasStrength);
             return true;
         }
 
@@ -116,7 +129,11 @@ namespace Game.Scripts.Entities.Animals.Spawn
             return configuration != null ? configuration.SpawnBorderOffset : 0;
         }
 
-        private static Vector2Int PickCenterBiasedOrigin(List<Vector2Int> candidates, int rows, int cols)
+        private static PlacementCandidate PickCenterBiased(
+            List<PlacementCandidate> candidates,
+            int rows,
+            int cols,
+            float biasStrength)
         {
             Vector2 fieldCenter = new Vector2((rows - 1) * 0.5f, (cols - 1) * 0.5f);
             float totalWeight = 0f;
@@ -124,12 +141,12 @@ namespace Game.Scripts.Entities.Animals.Spawn
 
             for (int i = 0; i < candidates.Count; i++)
             {
-                Vector2Int candidate = candidates[i];
+                PlacementCandidate candidate = candidates[i];
                 Vector2 blockCenter = new Vector2(
-                    candidate.x + 0.5f,
-                    candidate.y + 0.5f);
+                    candidate.Origin.x + candidate.SizeZ * 0.5f,
+                    candidate.Origin.y + candidate.SizeX * 0.5f);
                 float distance = Vector2.Distance(blockCenter, fieldCenter);
-                weights[i] = 1f / (1f + distance);
+                weights[i] = 1f / Mathf.Pow(1f + distance, biasStrength);
                 totalWeight += weights[i];
             }
 
@@ -146,10 +163,43 @@ namespace Game.Scripts.Entities.Animals.Spawn
             return candidates[candidates.Count - 1];
         }
 
-        private bool IsBlockFree(int startRow, int startCol, int sizeX, int sizeZ)
+        private bool IsBlockFree(Vector2Int origin, int sizeX, int sizeZ)
         {
-            for (int row = startRow; row < startRow + sizeZ; row++)
-                for (int col = startCol; col < startCol + sizeX; col++)
+            for (int row = origin.x; row < origin.x + sizeZ; row++)
+                for (int col = origin.y; col < origin.y + sizeX; col++)
+                    if (_cells[row, col].IsOccupied)
+                        return false;
+
+            return true;
+        }
+
+        private bool IsForwardLaneClear(Vector2Int origin, int sizeX, int sizeZ, int rotationStep)
+        {
+            int rows = _cells.GetLength(0);
+            int cols = _cells.GetLength(1);
+
+            int firstRow = origin.x;
+            int lastRow = origin.x + sizeZ - 1;
+            int firstCol = origin.y;
+            int lastCol = origin.y + sizeX - 1;
+
+            switch (rotationStep)
+            {
+                case 0:
+                    return IsRangeFree(0, firstRow - 1, firstCol, lastCol);
+                case 2:
+                    return IsRangeFree(lastRow + 1, rows - 1, firstCol, lastCol);
+                case 1:
+                    return IsRangeFree(firstRow, lastRow, lastCol + 1, cols - 1);
+                default:
+                    return IsRangeFree(firstRow, lastRow, 0, firstCol - 1);
+            }
+        }
+
+        private bool IsRangeFree(int rowFrom, int rowTo, int colFrom, int colTo)
+        {
+            for (int row = rowFrom; row <= rowTo; row++)
+                for (int col = colFrom; col <= colTo; col++)
                     if (_cells[row, col].IsOccupied)
                         return false;
 
@@ -174,6 +224,22 @@ namespace Game.Scripts.Entities.Animals.Spawn
             Vector3 lastCell = _cells[origin.x + sizeZ - 1, origin.y + sizeX - 1].transform.position;
 
             return (firstCell + lastCell) / 2f;
+        }
+
+        private readonly struct PlacementCandidate
+        {
+            public PlacementCandidate(Vector2Int origin, int rotationStep, int sizeX, int sizeZ)
+            {
+                Origin = origin;
+                RotationStep = rotationStep;
+                SizeX = sizeX;
+                SizeZ = sizeZ;
+            }
+
+            public Vector2Int Origin { get; }
+            public int RotationStep { get; }
+            public int SizeX { get; }
+            public int SizeZ { get; }
         }
     }
 }
